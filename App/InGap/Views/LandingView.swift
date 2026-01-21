@@ -11,25 +11,32 @@ struct LandingView: View {
     var body: some View {
         VStack(spacing: 32) {
             // Header
-            HStack {
-                Text("In The Gap!")
-                    .font(DesignSystem.Typography.largeTitle)
-                    .foregroundColor(DesignSystem.Colors.primaryText)
-                Spacer()
-                Button {
-                    nav.push(.history)
-                } label: {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 20))
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("In The Gap!")
+                        .font(DesignSystem.Typography.largeTitle)
                         .foregroundColor(DesignSystem.Colors.primaryText)
+                    Spacer()
+                    Button {
+                        nav.push(.history)
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignSystem.Colors.primaryText)
+                    }
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 20))
+                            .foregroundColor(DesignSystem.Colors.primaryText)
+                    }
                 }
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 20))
-                        .foregroundColor(DesignSystem.Colors.primaryText)
-                }
+                
+                Text("We'll find the perfect time for you to learn something new—powered by secure, on-device AI.")
+                    .font(DesignSystem.Typography.body)
+                    .foregroundColor(DesignSystem.Colors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, 20)
             .padding(.horizontal)
