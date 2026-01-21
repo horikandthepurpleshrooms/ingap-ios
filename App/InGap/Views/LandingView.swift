@@ -5,7 +5,7 @@ struct LandingView: View {
     @EnvironmentObject var nav: NavigationManager
     @StateObject private var rateLimit = RateLimitService.shared
     @State private var showSettings = false
-    @State private var planningMode: PlanningMode = .week
+    @State private var planningMode: PlanningMode = .tomorrow
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -44,22 +44,22 @@ struct LandingView: View {
             // Mode Selection
             HStack(spacing: 12) {
                 ModeCard(
-                    title: "Next Week",
-                    isSelected: planningMode == .week
-                ) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        planningMode = .week
-                        viewModel.planningMode = .week
-                    }
-                }
-                
-                ModeCard(
                     title: "Tomorrow",
                     isSelected: planningMode == .tomorrow
                 ) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         planningMode = .tomorrow
                         viewModel.planningMode = .tomorrow
+                    }
+                }
+                
+                ModeCard(
+                    title: "Next Week",
+                    isSelected: planningMode == .week
+                ) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        planningMode = .week
+                        viewModel.planningMode = .week
                     }
                 }
             }
