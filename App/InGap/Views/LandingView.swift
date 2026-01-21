@@ -12,7 +12,7 @@ struct LandingView: View {
         VStack(spacing: 32) {
             // Header
             HStack {
-                Text("InGap")
+                Text("In The Gap!")
                     .font(DesignSystem.Typography.largeTitle)
                     .foregroundColor(DesignSystem.Colors.primaryText)
                 Spacer()
