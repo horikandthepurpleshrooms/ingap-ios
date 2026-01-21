@@ -4,9 +4,13 @@ struct PlanResultView: View {
     @ObservedObject var viewModel: AppViewModel
     @State private var showingAlert = false
     
+    private var titleText: String {
+        viewModel.planningMode == .week ? "Your 7‑Day Plan" : "Tomorrow's Plan"
+    }
+    
     var body: some View {
         VStack {
-            Text("Your 7‑Day Plan")
+            Text(titleText)
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .padding()
@@ -42,7 +46,7 @@ struct PlanResultView: View {
                 .padding(.vertical, 4)
             }
             
-            Text("Review each day's steps before adding to Calendar.")
+            Text("Review each session before adding to Calendar.")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .padding(.top, 4)

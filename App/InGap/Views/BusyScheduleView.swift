@@ -31,7 +31,7 @@ struct BusyScheduleView: View {
                         let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
                         let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
                         
-                        var finalStart = calendar.date(bySettingHour: startComponents.hour!, minute: startComponents.minute!, second: 0, of: selectedDate)!
+                        let finalStart = calendar.date(bySettingHour: startComponents.hour!, minute: startComponents.minute!, second: 0, of: selectedDate)!
                         var finalEnd = calendar.date(bySettingHour: endComponents.hour!, minute: endComponents.minute!, second: 0, of: selectedDate)!
                         
                         // Handle overnight or end before start
@@ -80,9 +80,11 @@ struct BusyScheduleView: View {
             }
             .onAppear {
                 viewModel.fetchExistingEventsForNextWeek()
+                viewModel.fetchEventsForTomorrow()
             }
-            .onChange(of: viewModel.useCalendarBusy) { _ in
+            .onChange(of: viewModel.useCalendarBusy) { _, _ in
                 viewModel.fetchExistingEventsForNextWeek()
+                viewModel.fetchEventsForTomorrow()
             }
             
             Button(action: {
