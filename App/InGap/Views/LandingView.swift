@@ -3,6 +3,7 @@ import SwiftUI
 struct LandingView: View {
     @ObservedObject var viewModel: AppViewModel
     @EnvironmentObject var nav: NavigationManager
+    @StateObject private var rateLimit = RateLimitService.shared
     @State private var showSettings = false
     @State private var planningMode: PlanningMode = .week
     @FocusState private var isTextFieldFocused: Bool
@@ -15,6 +16,13 @@ struct LandingView: View {
                     .font(DesignSystem.Typography.largeTitle)
                     .foregroundColor(DesignSystem.Colors.primaryText)
                 Spacer()
+                Button {
+                    nav.push(.history)
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 20))
+                        .foregroundColor(DesignSystem.Colors.primaryText)
+                }
                 Button {
                     showSettings = true
                 } label: {
@@ -64,6 +72,12 @@ struct LandingView: View {
                 Text("We'll align this with your calendar availability.")
                     .font(DesignSystem.Typography.caption)
                     .foregroundColor(DesignSystem.Colors.secondaryText)
+                
+                if !rateLimit.isPremium {
+                    Text("\(rateLimit.remainingGenerations) of 10 generations left until \(rateLimit.resetDate.formatted(.dateTime.weekday().month().day().year().hour(.twoDigits(amPM: .abbreviated)).minute())).")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(rateLimit.canGenerate ? DesignSystem.Colors.accent : .red)
+                }
             }
             .padding(.horizontal)
             
@@ -94,8 +108,8 @@ struct LandingView: View {
                     }
                 }
             }
-            .buttonStyle(PrimaryButtonStyle(isEnabled: !viewModel.userTopic.isEmpty && !viewModel.isGenerating))
-            .disabled(viewModel.userTopic.isEmpty || viewModel.isGenerating)
+            .buttonStyle(PrimaryButtonStyle(isEnabled: !viewModel.userTopic.isEmpty && !viewModel.isGenerating && rateLimit.canGenerate))
+            .disabled(viewModel.userTopic.isEmpty || viewModel.isGenerating || !rateLimit.canGenerate)
             .padding(.horizontal)
             .padding(.bottom, 20)
         }

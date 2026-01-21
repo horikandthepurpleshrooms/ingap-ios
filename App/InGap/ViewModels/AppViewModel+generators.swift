@@ -33,6 +33,12 @@ extension AppViewModel {
     
     @MainActor
     func generateSchedule() async {
+        // Rate limit check
+        guard RateLimitService.shared.canGenerate else {
+            print("[InTheGap] Rate limit reached.")
+            return
+        }
+        
         isGenerating = true
         defer { isGenerating = false }
         
@@ -89,6 +95,12 @@ extension AppViewModel {
     
     @MainActor
     func generateTomorrowPlan() async {
+        // Rate limit check
+        guard RateLimitService.shared.canGenerate else {
+            print("[InTheGap] Rate limit reached.")
+            return
+        }
+        
         isGenerating = true
         defer { isGenerating = false }
         
@@ -192,6 +204,12 @@ extension AppViewModel {
             }
             
             self.generatedPlan = plans
+            
+            // Record generation and persist
+            RateLimitService.shared.recordGeneration()
+            
+            let sessionsData = plans.map { (date: $0.date, activity: $0.activity, duration: $0.duration, details: $0.details) }
+            DataService.shared.saveSchedule(topic: self.userTopic, mode: self.planningMode.rawValue, sessions: sessionsData)
             
         } catch {
             print("[InTheGap] Foundation Model Error: \(error)")

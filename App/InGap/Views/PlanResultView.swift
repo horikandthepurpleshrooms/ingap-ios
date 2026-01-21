@@ -98,9 +98,13 @@ struct PlanResultView: View {
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .alert("Saved", isPresented: $showingAlert) {
-            Button("OK", role: .cancel) { }
+            Button("OK") {
+                if let url = URL(string: "calshow:") {
+                    UIApplication.shared.open(url)
+                }
+            }
         } message: {
-            Text("Sessions added to 'InTheGap'.")
+            Text("Sessions added to 'InTheGap'. Opening Calendar...")
         }
     }
 }

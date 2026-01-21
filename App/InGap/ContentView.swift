@@ -17,6 +17,8 @@ struct ContentView: View {
                             BusyScheduleView(viewModel: viewModel)
                         case .planResult:
                             PlanResultView(viewModel: viewModel)
+                        case .history:
+                            HistoryView()
                         }
                     }
             }

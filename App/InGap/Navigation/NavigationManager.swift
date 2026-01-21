@@ -4,6 +4,7 @@ import Combine
 enum AppRoute: Hashable {
     case busySchedule
     case planResult
+    case history
 }
 
 class NavigationManager: ObservableObject {
