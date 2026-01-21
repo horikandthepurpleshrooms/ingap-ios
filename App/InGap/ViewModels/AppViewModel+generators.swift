@@ -31,119 +31,119 @@ extension AppViewModel {
     
     // MARK: - Main Generation Logic
     
-    func generateSchedule() {
+    @MainActor
+    func generateSchedule() async {
         isGenerating = true
+        defer { isGenerating = false }
+        
         let topic = userTopic.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        Task { [weak self] in
-            defer { DispatchQueue.main.async { self?.isGenerating = false } }
-            
-            guard let self = self, let range = self.nextWorkWeekRange() else { return }
-            
-            let tzOffset = self.getTimezoneOffset()
-            let busyList = self.formatBusySlots(self.fetchedEvents, range: range)
-            
-            let instructions = """
-            You are a professional learning coach. Your task is to generate a 7-day study plan.
-            
-            CRITICAL INSTRUCTIONS:
-            1. Return ONLY valid JSON. No markdown, no "```json" blocks, no conversational text.
-            2. Follow the schema:
-                {
-                    "days": [
-                        {
-                            "startISO8601": "YYYY-MM-DDTHH:MM:SS+/-HH:MM",
-                            "topic": "string",
-                            "activity": "string",
-                            "durationMinutes": 5-15,
-                            "details": ["string", "string", "string"]
-                        }
-                    ]
-                } 
-            3. Use Timezone Offset: \(tzOffset)
-            4. THOUGHT PROCESS: Before writing the JSON, internally verify that no session overlaps with the provided busy slots.
-            """
-            
-            let prompt = """
-            # OBJECTIVE
-            Create a 7-day plan for: "\(topic)"
-            Week Range: \(Self.formatDateForDisplay(range.start)) to \(Self.formatDateForDisplay(range.end))
-            
-            # CALENDAR CONFLICTS (DO NOT OVERLAP)
-            \(busyList)
-            
-            # STRICT RULES
-            - Exactly 7 sessions (one per day).
-            - Hours: 07:00 to 21:00 only.
-            - Duration: 45-90 minutes.
-            - Format: YYYY-MM-DDTHH:MM:SS\(tzOffset)
-            - Progression: Days 1-2 (Basics), 3-5 (Practice), 6-7 (Advanced/Project).
-            
-            # VALIDATION
-            Ensure every "startISO8601" date actually falls on the correct day of that week.
-            """
-            
-            await performGeneration(instructions: instructions, prompt: prompt, range: range)
-        }
+        // Note: nextWorkWeekRange needs to be accessible. Since it's in the main file, it should be fine.
+        guard let range = self.nextWorkWeekRange() else { return }
+        
+        let tzOffset = self.getTimezoneOffset()
+        let busyList = self.formatBusySlots(self.fetchedEvents, range: range)
+        
+        let instructions = """
+        You are a professional learning coach. Your task is to generate a 7-day study plan.
+        
+        CRITICAL INSTRUCTIONS:
+        1. Return ONLY valid JSON. No markdown, no "```json" blocks, no conversational text.
+        2. Follow the schema:
+            {
+                "days": [
+                    {
+                        "startISO8601": "YYYY-MM-DDTHH:MM:SS+/-HH:MM",
+                        "topic": "string",
+                        "activity": "string",
+                        "durationMinutes": 5-15,
+                        "details": ["string", "string", "string"]
+                    }
+                ]
+            } 
+        3. Use Timezone Offset: \(tzOffset)
+        4. THOUGHT PROCESS: Before writing the JSON, internally verify that no session overlaps with the provided busy slots.
+        """
+        
+        let prompt = """
+        # OBJECTIVE
+        Create a 7-day plan for: "\(topic)"
+        Week Range: \(Self.formatDateForDisplay(range.start)) to \(Self.formatDateForDisplay(range.end))
+        
+        # CALENDAR CONFLICTS (DO NOT OVERLAP)
+        \(busyList)
+        
+        # STRICT RULES
+        - Exactly 7 sessions (one per day).
+        - Hours: 07:00 to 21:00 only.
+        - Duration: 45-90 minutes.
+        - Format: YYYY-MM-DDTHH:MM:SS\(tzOffset)
+        - Progression: Days 1-2 (Basics), 3-5 (Practice), 6-7 (Advanced/Project).
+        
+        # VALIDATION
+        Ensure every "startISO8601" date actually falls on the correct day of that week.
+        """
+        
+        await performGeneration(instructions: instructions, prompt: prompt, range: range)
     }
     
-    func generateTomorrowPlan() {
+    @MainActor
+    func generateTomorrowPlan() async {
         isGenerating = true
+        defer { isGenerating = false }
+        
         let topic = userTopic.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        Task { [weak self] in
-            defer { DispatchQueue.main.async { self?.isGenerating = false } }
-            
-            guard let self = self, let range = self.tomorrowRange() else { return }
-            
-            let tzOffset = self.getTimezoneOffset()
-            let busyList = self.formatBusySlots(self.fetchedEvents, range: range)
-            let tomorrowDate = Self.formatDateForDisplay(range.start)
-            
-            let instructions = """
-            You are a micro-learning coach. Create 3 short sessions for tomorrow.
-            
-            CRITICAL: 
-            - Return ONLY valid JSON.
-            - Schema:
-                {
-                    "days": [
-                        {
-                            "startISO8601": "YYYY-MM-DDTHH:MM:SS+/-HH:MM",
-                            "topic": "string",
-                            "activity": "string",
-                            "durationMinutes": 5-15,
-                            "details": ["string", "string", "string"]
-                        }
-                    ]
-                } 
-            - Timezone: \(tzOffset)
-            """
-            
-            let prompt = """
-            # OBJECTIVE
-            3 Micro-sessions for tomorrow (\(tomorrowDate)) regarding: "\(topic)"
-            
-            # UNAVAILABLE TIMES
-            \(busyList)
-            
-            # WINDOWS
-            1. Morning (08:00-10:00) - 15 mins
-            2. Midday (12:00-14:00) - 15 mins
-            3. Evening (19:00-21:00) - 10 mins
-            
-            # RULES
-            - All sessions MUST occur on \(tomorrowDate).
-            - Avoid all conflicts with a 5-minute buffer.
-            - Use ISO8601 with offset \(tzOffset).
-            """
-            
-            await performGeneration(instructions: instructions, prompt: prompt, range: range)
-        }
+        guard let range = self.tomorrowRange() else { return }
+        
+        let tzOffset = self.getTimezoneOffset()
+        let busyList = self.formatBusySlots(self.fetchedEvents, range: range)
+        let tomorrowDate = Self.formatDateForDisplay(range.start)
+        
+        let instructions = """
+        You are a micro-learning coach. Create 3 short sessions for tomorrow.
+        
+        CRITICAL: 
+        - Return ONLY valid JSON.
+        - Schema:
+            {
+                "days": [
+                    {
+                        "startISO8601": "YYYY-MM-DDTHH:MM:SS+/-HH:MM",
+                        "topic": "string",
+                        "activity": "string",
+                        "durationMinutes": 5-15,
+                        "details": ["string", "string", "string"]
+                    }
+                ]
+            } 
+        - Timezone: \(tzOffset)
+        """
+        
+        let prompt = """
+        # OBJECTIVE
+        3 Micro-sessions for tomorrow (\(tomorrowDate)) regarding: "\(topic)"
+        
+        # UNAVAILABLE TIMES
+        \(busyList)
+        
+        # WINDOWS
+        1. Morning (08:00-10:00) - 15 mins
+        2. Midday (12:00-14:00) - 15 mins
+        3. Evening (19:00-21:00) - 10 mins
+        
+        # RULES
+        - All sessions MUST occur on \(tomorrowDate).
+        - Avoid all conflicts with a 5-minute buffer.
+        - Use ISO8601 with offset \(tzOffset).
+        """
+        
+        await performGeneration(instructions: instructions, prompt: prompt, range: range)
     }
     
     // MARK: - Private Execution Engine
     
+    @MainActor
     private func performGeneration(instructions: String, prompt: String, range: (start: Date, end: Date)) async {
         let session = LanguageModelSession(instructions: instructions)
         
@@ -191,17 +191,11 @@ extension AppViewModel {
                 return nil
             }
             
-            DispatchQueue.main.async {
-                self.generatedPlan = plans
-                withAnimation { self.currentStep = 2 }
-            }
+            self.generatedPlan = plans
             
         } catch {
             print("[InTheGap] Foundation Model Error: \(error)")
-            DispatchQueue.main.async {
-                self.generatedPlan = []
-                withAnimation { self.currentStep = 2 }
-            }
+            self.generatedPlan = []
         }
     }
 }

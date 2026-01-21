@@ -3,6 +3,7 @@ import EventKit
 
 struct BusyScheduleView: View {
     @ObservedObject var viewModel: AppViewModel
+    @EnvironmentObject var nav: NavigationManager
     @State private var selectedDate = Date()
     @State private var startTime = Date()
     @State private var endTime = Date().addingTimeInterval(3600)
@@ -88,7 +89,12 @@ struct BusyScheduleView: View {
             }
             
             Button(action: {
-                viewModel.generateSchedule()
+                Task { @MainActor in
+                    await viewModel.generateSchedule()
+                    withAnimation {
+                        nav.push(.planResult)
+                    }
+                }
             }) {
                 if viewModel.isGenerating {
                     ProgressView()

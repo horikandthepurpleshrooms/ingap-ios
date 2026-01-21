@@ -5,7 +5,7 @@ import EventKit
 import FoundationModels
 
 class AppViewModel: ObservableObject {
-    @Published var currentStep: Int = 0
+    // @Published var currentStep: Int = 0 - Removed for NavigationManager
     @Published var userTopic: String = ""
     @Published var busySlots: [BusySlot] = []
     @Published var generatedPlan: [DayPlan] = []

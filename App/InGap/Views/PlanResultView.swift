@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlanResultView: View {
     @ObservedObject var viewModel: AppViewModel
+    @EnvironmentObject var nav: NavigationManager
     @State private var showingAlert = false
     
     private var titleText: String {
@@ -75,10 +76,10 @@ struct PlanResultView: View {
             
             Button("Start Over") {
                 withAnimation {
-                    viewModel.currentStep = 0
                     viewModel.userTopic = ""
                     viewModel.busySlots = []
                     viewModel.generatedPlan = []
+                    nav.popToRoot()
                 }
             }
             .padding(.bottom)
