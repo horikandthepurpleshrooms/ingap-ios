@@ -8,117 +8,99 @@ struct LandingView: View {
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
-        ZStack {
-            // Background gradient
-            LinearGradient(colors: [Color(white: 0.98), Color(white: 0.95)], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 30) {
-                // Mode Selection
-                HStack(spacing: 16) {
-                    ModeCard(
-                        title: "Next Week",
-                        icon: "calendar", 
-                        isSelected: planningMode == .week
-                    ) {
-                        withAnimation(.spring()) {
-                            planningMode = .week
-                            viewModel.planningMode = .week
-                        }
-                    }
-                    
-                    ModeCard(
-                        title: "Tomorrow",
-                        icon: "sun.max.fill",
-                        isSelected: planningMode == .tomorrow
-                    ) {
-                        withAnimation(.spring()) {
-                            planningMode = .tomorrow
-                            viewModel.planningMode = .tomorrow
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(planningMode == .week ? "What's your focus for next week?" : "What's your goal for tomorrow?")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    TextField(planningMode == .week ? "e.g., Master SwiftUI Animations" : "e.g., Review for Biology Exam", text: $viewModel.userTopic)
-                        .font(.headline)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                        .focused($isTextFieldFocused)
-                        .submitLabel(.done)
-                    
-                    Text("We'll craft a personalized plan referencing your calendar availability.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 4)
-                }
-                .padding(.horizontal)
-                
+        VStack(spacing: 32) {
+            // Header
+            HStack {
+                Text("InGap")
+                    .font(DesignSystem.Typography.largeTitle)
+                    .foregroundColor(DesignSystem.Colors.primaryText)
                 Spacer()
-                
-                Button(action: {
-                    isTextFieldFocused = false
-                    Task { @MainActor in
-                        if planningMode == .week {
-                            withAnimation {
-                                nav.push(.busySchedule)
-                            }
-                        } else {
-                            await viewModel.generateTomorrowPlan()
-                            withAnimation {
-                                nav.push(.planResult)
-                            }
-                        }
-                    }
-                }) {
-                    HStack {
-                        if viewModel.isGenerating {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text(planningMode == .week ? "Continue" : "Generate Plan")
-                                .fontWeight(.semibold)
-                            Image(systemName: "arrow.right")
-                        }
-                    }
-                    .font(.title3)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        !viewModel.userTopic.isEmpty ? 
-                            AnyView(LinearGradient(colors: [Color.accentColor, Color.accentColor.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)) : 
-                            AnyView(Color.gray.opacity(0.3))
-                    )
-                    .cornerRadius(16)
-                    .shadow(color: !viewModel.userTopic.isEmpty ? Color.accentColor.opacity(0.3) : Color.clear, radius: 10, x: 0, y: 5)
-                }
-                .disabled(viewModel.userTopic.isEmpty || viewModel.isGenerating)
-                .padding(.horizontal)
-                .padding(.bottom, 30)
-            }
-        }
-        .navigationTitle("InTheGap")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showSettings = true
                 } label: {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(.primary.opacity(0.7))
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 20))
+                        .foregroundColor(DesignSystem.Colors.primaryText)
                 }
             }
+            .padding(.top, 20)
+            .padding(.horizontal)
+            
+            // Mode Selection
+            HStack(spacing: 12) {
+                ModeCard(
+                    title: "Next Week",
+                    isSelected: planningMode == .week
+                ) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        planningMode = .week
+                        viewModel.planningMode = .week
+                    }
+                }
+                
+                ModeCard(
+                    title: "Tomorrow",
+                    isSelected: planningMode == .tomorrow
+                ) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        planningMode = .tomorrow
+                        viewModel.planningMode = .tomorrow
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            // Input Section
+            VStack(alignment: .leading, spacing: 20) {
+                Text(planningMode == .week ? "Focus?" : "Goal?")
+                    .font(DesignSystem.Typography.title2)
+                    .foregroundColor(DesignSystem.Colors.primaryText)
+                
+                TextField(planningMode == .week ? "Master SwiftUI..." : "Biology Exam...", text: $viewModel.userTopic)
+                    .textFieldStyle(MinimalTextFieldStyle())
+                    .focused($isTextFieldFocused)
+                    .submitLabel(.done)
+                
+                Text("We'll align this with your calendar availability.")
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.secondaryText)
+            }
+            .padding(.horizontal)
+            
+            Spacer()
+            
+            // Action Button
+            Button(action: {
+                isTextFieldFocused = false
+                Task { @MainActor in
+                    if planningMode == .week {
+                        withAnimation {
+                            nav.push(.busySchedule)
+                        }
+                    } else {
+                        await viewModel.generateTomorrowPlan()
+                        withAnimation {
+                            nav.push(.planResult)
+                        }
+                    }
+                }
+            }) {
+                HStack {
+                    if viewModel.isGenerating {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text(planningMode == .week ? "Next" : "Generate")
+                        Image(systemName: "arrow.right")
+                    }
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle(isEnabled: !viewModel.userTopic.isEmpty && !viewModel.isGenerating))
+            .disabled(viewModel.userTopic.isEmpty || viewModel.isGenerating)
+            .padding(.horizontal)
+            .padding(.bottom, 20)
         }
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .navigationBarHidden(true)
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
@@ -127,34 +109,25 @@ struct LandingView: View {
 
 struct ModeCard: View {
     let title: String
-    let icon: String
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(isSelected ? .white : .primary)
-                
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(isSelected ? .white : .primary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .background(
-                isSelected ? 
-                    AnyView(Color.accentColor) : 
-                    AnyView(Color.white)
-            )
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.1), lineWidth: 1)
-            )
+            Text(title)
+                .font(DesignSystem.Typography.headline)
+                .foregroundColor(isSelected ? .white : DesignSystem.Colors.primaryText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.cornerRadius)
+                        .fill(isSelected ? DesignSystem.Colors.primaryText : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignSystem.cornerRadius)
+                        .stroke(DesignSystem.Colors.border, lineWidth: isSelected ? 0 : 1)
+                )
         }
+        .buttonStyle(.plain)
     }
 }

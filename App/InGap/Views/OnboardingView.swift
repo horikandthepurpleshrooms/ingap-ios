@@ -13,26 +13,9 @@ struct OnboardingView: View {
     @State private var hasAccepted = false
     
     private let pages: [OnboardingPage] = [
-        OnboardingPage(
-            imageName: "brain.head.profile",
-            title: "Learn Smarter",
-            description: "InTheGap uses on-device AI to create personalized learning plans tailored to your goals and schedule."
-        ),
-        OnboardingPage(
-            imageName: "calendar.badge.clock",
-            title: "Fits Your Life",
-            description: "We analyze your calendar and busy times to find the perfect learning windows throughout your week."
-        ),
-        OnboardingPage(
-            imageName: "chart.line.uptrend.xyaxis",
-            title: "Stay Consistent",
-            description: "Get reminders 10 minutes before each session. Build habits that stick with daily or weekly plans."
-        ),
-        OnboardingPage(
-            imageName: "lock.shield",
-            title: "Your Privacy Matters",
-            description: "All AI processing happens on your device. Your learning goals and calendar data never leave your phone."
-        )
+        OnboardingPage(imageName: "brain.head.profile", title: "Learn Smarter", description: "Personalized plans powered by on-device AI."),
+        OnboardingPage(imageName: "calendar.badge.clock", title: "Fits Your Life", description: "Seamlessly integrates with your calendar."),
+        OnboardingPage(imageName: "lock.shield", title: "Private", description: "Processing stays on your device. Your data is yours.")
     ]
     
     var body: some View {
@@ -41,79 +24,66 @@ struct OnboardingView: View {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
                     VStack(spacing: 24) {
                         Spacer()
-                        
                         Image(systemName: page.imageName)
-                            .font(.system(size: 80))
-                            .foregroundStyle(.accent)
-                            .padding(.bottom, 16)
+                            .font(.system(size: 60))
+                            .foregroundColor(DesignSystem.Colors.primaryText)
                         
-                        Text(page.title)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
-                        
-                        Text(page.description)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                        
-                        Spacer()
+                        VStack(spacing: 12) {
+                            Text(page.title)
+                                .font(DesignSystem.Typography.largeTitle)
+                                .foregroundColor(DesignSystem.Colors.primaryText)
+                            
+                            Text(page.description)
+                                .font(DesignSystem.Typography.body)
+                                .foregroundColor(DesignSystem.Colors.secondaryText)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
                         Spacer()
                     }
                     .tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
             
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 if currentPage == pages.count - 1 {
                     Toggle(isOn: $hasAccepted) {
-                        Text("I accept the terms and agree to use this app responsibly")
-                            .font(.footnote)
+                        Text("I accept the terms of service")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
                     }
                     .toggleStyle(CheckboxToggleStyle())
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 32)
                 }
                 
                 Button(action: {
                     if currentPage < pages.count - 1 {
-                        withAnimation {
-                            currentPage += 1
-                        }
+                        withAnimation { currentPage += 1 }
                     } else if hasAccepted {
-                        hasCompletedOnboarding = true
+                        withAnimation { hasCompletedOnboarding = true }
                     }
                 }) {
                     Text(currentPage == pages.count - 1 ? "Get Started" : "Continue")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            (currentPage == pages.count - 1 && !hasAccepted)
-                                ? Color.gray.opacity(0.4)
-                                : Color.accentColor
-                        )
-                        .cornerRadius(12)
                 }
+                .buttonStyle(PrimaryButtonStyle(isEnabled: currentPage != pages.count - 1 || hasAccepted))
                 .disabled(currentPage == pages.count - 1 && !hasAccepted)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
             }
+            .padding(.bottom, 40)
+            .padding(.horizontal, 24)
         }
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
     }
 }
 
 struct CheckboxToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                .font(.title2)
-                .foregroundStyle(configuration.isOn ? Color.accentColor : Color.secondary)
-                .onTapGesture {
-                    configuration.isOn.toggle()
-                }
+                .font(.system(size: 20))
+                .foregroundColor(configuration.isOn ? DesignSystem.Colors.primaryText : DesignSystem.Colors.secondaryText)
+                .onTapGesture { configuration.isOn.toggle() }
             
             configuration.label
         }

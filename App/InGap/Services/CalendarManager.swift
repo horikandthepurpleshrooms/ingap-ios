@@ -40,7 +40,7 @@ class CalendarManager: ObservableObject {
         // Create new calendar
         let newCalendar = EKCalendar(for: .event, eventStore: store)
         newCalendar.title = "InTheGap"
-        newCalendar.cgColor = CGColor(red: 0.0, green: 0.686, blue: 0.569, alpha: 1.0)
+        newCalendar.cgColor = CGColor(red: 1.0, green: 0.498, blue: 0.314, alpha: 1.0)
         
         // Find best source (usually iCloud or Local)
         let sources = store.sources

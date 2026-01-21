@@ -6,83 +6,101 @@ struct PlanResultView: View {
     @State private var showingAlert = false
     
     private var titleText: String {
-        viewModel.planningMode == .week ? "Your 7‑Day Plan" : "Tomorrow's Plan"
+        viewModel.planningMode == .week ? "Your Plan" : "Tomorrow"
     }
     
     var body: some View {
-        VStack {
-            Text(titleText)
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding()
-            
-            List(viewModel.generatedPlan) { plan in
-                VStack(alignment: .leading) {
-                    Text(plan.date.formatted(.dateTime.weekday().day().month()))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text(plan.topic)
-                        .font(.headline)
-                    
-                    Text(plan.activity)
-                        .font(.subheadline)
-                    
-                    if !plan.details.isEmpty {
-                        VStack(alignment: .leading, spacing: 2) {
-                            ForEach(plan.details, id: \.self) { detail in
-                                Text("• \(detail)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.top, 4)
-                    }
-                    
-                    Text("\(plan.date.formatted(date: .omitted, time: .shortened)) • \(Int(plan.duration/60)) min")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: { nav.pop() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20))
+                        .foregroundColor(DesignSystem.Colors.primaryText)
                 }
-                Divider()
-                .padding(.vertical, 4)
-            }
-            
-            Text("Review each session before adding to Calendar.")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-                .padding(.top, 4)
-            
-            Button(action: {
-                viewModel.saveToCalendar()
-                showingAlert = true
-            }) {
-                HStack {
-                    Image(systemName: "calendar.badge.plus")
-                    Text("Add to Calendar")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.accentColor)
-                .cornerRadius(12)
+                Spacer()
+                Text(titleText)
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.primaryText)
+                Spacer()
+                Color.clear.frame(width: 24, height: 24)
             }
             .padding()
-            .alert("Added to Calendar", isPresented: $showingAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("Your learning plan has been added to the 'InTheGap' calendar.")
-            }
+            .background(DesignSystem.Colors.background)
             
-            Button("Start Over") {
-                withAnimation {
-                    viewModel.userTopic = ""
-                    viewModel.busySlots = []
-                    viewModel.generatedPlan = []
-                    nav.popToRoot()
+            // Content
+            List(viewModel.generatedPlan) { plan in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(plan.date.formatted(.dateTime.weekday().day().month()))
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
+                            .textCase(.uppercase)
+                        Spacer()
+                        Text("\(Int(plan.duration/60)) min")
+                            .font(DesignSystem.Typography.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(DesignSystem.Colors.surface)
+                            .cornerRadius(4)
+                    }
+                    
+                    Text(plan.activity)
+                        .font(DesignSystem.Typography.headline)
+                        .foregroundColor(DesignSystem.Colors.primaryText)
+                    
+                    if !plan.details.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(plan.details, id: \.self) { detail in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Circle()
+                                        .fill(DesignSystem.Colors.secondaryText)
+                                        .frame(width: 4, height: 4)
+                                        .padding(.top, 6)
+                                    Text(detail)
+                                        .font(DesignSystem.Typography.caption)
+                                        .foregroundColor(DesignSystem.Colors.secondaryText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
                 }
+                .padding(.vertical, 8)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.visible)
             }
-            .padding(.bottom)
+            .listStyle(.plain)
+            
+            // Actions
+            VStack(spacing: 12) {
+                Button(action: {
+                    viewModel.saveToCalendar()
+                    showingAlert = true
+                }) {
+                    Text("Add to Calendar")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                
+                Button("Start Over") {
+                    withAnimation {
+                        viewModel.userTopic = ""
+                        viewModel.busySlots = []
+                        viewModel.generatedPlan = []
+                        nav.popToRoot()
+                    }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+            .padding()
+            .background(DesignSystem.Colors.background)
+        }
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .navigationBarHidden(true)
+        .alert("Saved", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Sessions added to 'InTheGap'.")
         }
     }
 }

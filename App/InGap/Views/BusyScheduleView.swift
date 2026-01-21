@@ -9,85 +9,118 @@ struct BusyScheduleView: View {
     @State private var endTime = Date().addingTimeInterval(3600)
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Block your busy times")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.top)
-
-            Toggle(isOn: $viewModel.useCalendarBusy) {
-                Text("Use calendar events as busy time")
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: { nav.pop() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20))
+                        .foregroundColor(DesignSystem.Colors.primaryText)
+                }
+                Spacer()
+                Text("Availability")
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.primaryText)
+                Spacer()
+                // Empty view for centering title
+                Color.clear.frame(width: 24, height: 24)
             }
-            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-            .padding(.horizontal)
+            .padding()
+            .background(DesignSystem.Colors.background)
             
             List {
-                Section(header: Text("Add Busy Slot"), footer: Text("Add any commitments not on your calendar.")) {
-                    DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
-                    DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
-                    DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
-                    
-                    Button("Add Busy Time") {
-                        let calendar = Calendar.current
-                        let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
-                        let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
-                        
-                        let finalStart = calendar.date(bySettingHour: startComponents.hour!, minute: startComponents.minute!, second: 0, of: selectedDate)!
-                        var finalEnd = calendar.date(bySettingHour: endComponents.hour!, minute: endComponents.minute!, second: 0, of: selectedDate)!
-                        
-                        // Handle overnight or end before start
-                        if finalEnd < finalStart {
-                            finalEnd = finalEnd.addingTimeInterval(86400)
-                        }
-                        
-                        viewModel.addBusySlot(start: finalStart, end: finalEnd)
-                    }
+                Section {
+                    Toggle("Integrate Calendar", isOn: $viewModel.useCalendarBusy)
+                        .tint(DesignSystem.Colors.accent)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } header: {
+                    Text("AUTOMATION")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondaryText)
                 }
                 
-                Section(header: Text("Your Busy Schedule")) {
-                    ForEach(viewModel.busySlots) { slot in
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
                         HStack {
-                            Text(slot.start.formatted(.dateTime.weekday().hour().minute()))
-                            Text("-")
-                            Text(slot.end.formatted(.dateTime.hour().minute()))
+                            DatePicker("Start", selection: $startTime, displayedComponents: .hourAndMinute)
                             Spacer()
-                            Text("Manual")
+                            Image(systemName: "arrow.right")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                            Spacer()
+                            DatePicker("End", selection: $endTime, displayedComponents: .hourAndMinute)
                         }
+                        
+                        Button("Add Block") {
+                            let calendar = Calendar.current
+                            let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
+                            let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
+                            
+                            let finalStart = calendar.date(bySettingHour: startComponents.hour!, minute: startComponents.minute!, second: 0, of: selectedDate)!
+                            var finalEnd = calendar.date(bySettingHour: endComponents.hour!, minute: endComponents.minute!, second: 0, of: selectedDate)!
+                            
+                            if finalEnd < finalStart {
+                                finalEnd = finalEnd.addingTimeInterval(86400)
+                            }
+                            
+                            viewModel.addBusySlot(start: finalStart, end: finalEnd)
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
                     }
-                    .onDelete { indexSet in
-                        viewModel.busySlots.remove(atOffsets: indexSet)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                } header: {
+                    Text("MANUAL BLOCKS")
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.secondaryText)
+                }
+                
+                if !viewModel.busySlots.isEmpty {
+                    Section {
+                        ForEach(viewModel.busySlots) { slot in
+                            HStack {
+                                Text(slot.start.formatted(.dateTime.weekday().hour().minute()))
+                                Spacer()
+                                Text(slot.end.formatted(.dateTime.hour().minute()))
+                            }
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.primaryText)
+                            .listRowBackground(Color.clear)
+                        }
+                        .onDelete { indexSet in
+                            viewModel.busySlots.remove(atOffsets: indexSet)
+                        }
+                    } header: {
+                        Text("ADDED BLOCKS")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
                     }
                 }
                 
-                Section(header: Text("In Your Calendar (Next Week)")) {
-                    if viewModel.fetchedEvents.isEmpty {
-                        Text("No events found.")
-                            .foregroundColor(.gray)
-                    } else {
+                if !viewModel.fetchedEvents.isEmpty {
+                    Section {
                         ForEach(viewModel.fetchedEvents, id: \.eventIdentifier) { event in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(event.title)
-                                        .font(.headline)
-                                    Text(event.startDate.formatted(.dateTime.weekday().hour().minute()) + " - " + event.endDate.formatted(.dateTime.hour().minute()))
-                                        .font(.caption)
-                                }
+                            VStack(alignment: .leading) {
+                                Text(event.title)
+                                    .font(DesignSystem.Typography.headline)
+                                Text(event.startDate.formatted(.dateTime.weekday().hour().minute()) + " - " + event.endDate.formatted(.dateTime.hour().minute()))
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.secondaryText)
                             }
+                            .listRowBackground(Color.clear)
                         }
+                    } header: {
+                        Text("CALENDAR EVENTS")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
                     }
                 }
             }
-            .onAppear {
-                viewModel.fetchExistingEventsForNextWeek()
-                viewModel.fetchEventsForTomorrow()
-            }
-            .onChange(of: viewModel.useCalendarBusy) { _, _ in
-                viewModel.fetchExistingEventsForNextWeek()
-                viewModel.fetchEventsForTomorrow()
-            }
+            .listStyle(.plain)
             
+            // Generate Button
             Button(action: {
                 Task { @MainActor in
                     await viewModel.generateSchedule()
@@ -97,19 +130,25 @@ struct BusyScheduleView: View {
                 }
             }) {
                 if viewModel.isGenerating {
-                    ProgressView()
+                    ProgressView().tint(.white)
                 } else {
-                    Text("Generate My Plan")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.accentColor)
-                        .cornerRadius(12)
+                    Text("Create Plan")
                 }
             }
-            .padding()
+            .buttonStyle(PrimaryButtonStyle(isEnabled: !viewModel.isGenerating))
             .disabled(viewModel.isGenerating)
+            .padding()
+            .background(DesignSystem.Colors.background)
+        }
+        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .navigationBarHidden(true)
+        .onAppear {
+            viewModel.fetchExistingEventsForNextWeek()
+            viewModel.fetchEventsForTomorrow()
+        }
+        .onChange(of: viewModel.useCalendarBusy) { _, _ in
+            viewModel.fetchExistingEventsForNextWeek()
+            viewModel.fetchEventsForTomorrow()
         }
     }
 }
