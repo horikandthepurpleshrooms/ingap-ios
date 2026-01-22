@@ -94,7 +94,7 @@ class AppViewModel: ObservableObject {
     
     func fetchEventsForTomorrow() {
         guard let range = tomorrowRange() else { return }
-        calendarManager.checkPermission()
+        calendarManager.updateAuthorizationStatus()
         
         let events = calendarManager.fetchEvents(start: range.start, end: range.end)
         DispatchQueue.main.async { [weak self] in
@@ -104,7 +104,7 @@ class AppViewModel: ObservableObject {
     
     func fetchExistingEventsForNextWeek() {
         guard let range = nextWorkWeekRange() else { return }
-        calendarManager.checkPermission()
+        calendarManager.updateAuthorizationStatus()
         
         let events = calendarManager.fetchEvents(start: range.start, end: range.end)
         DispatchQueue.main.async { [weak self] in

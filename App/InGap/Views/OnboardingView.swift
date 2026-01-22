@@ -1,4 +1,5 @@
 import SwiftUI
+import EventKit
 
 enum OnboardingStep: Int, CaseIterable {
     case value = 0
@@ -13,6 +14,7 @@ struct OnboardingView: View {
     @State private var currentStep: OnboardingStep = .value
     @State private var hasAcceptedTerms = false
     @StateObject private var calendarManager = CalendarManager()
+    @Environment(\.scenePhase) var scenePhase
     
     // Animation States
     @State private var isAnimating = false
@@ -80,6 +82,11 @@ struct OnboardingView: View {
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.8, blendDuration: 0), value: currentStep)
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                calendarManager.updateAuthorizationStatus()
+            }
+        }
     }
     
     // MARK: - Step Views
@@ -142,18 +149,18 @@ struct OnboardingView: View {
     private var permissionsStep: some View {
         VStack(spacing: 32) {
             Spacer()
-            Image(systemName: "calendar")
+            Image(systemName: permissionIcon)
                 .font(.system(size: 70))
-                .foregroundColor(DesignSystem.Colors.primaryText)
-                .symbolEffect(.bounce, options: .repeating)
+                .foregroundColor(calendarManager.authStatus == .denied ? .red : DesignSystem.Colors.primaryText)
+                .symbolEffect(.pulse, options: .repeating)
             
             VStack(spacing: 16) {
-                Text("Full Calendar Access")
+                Text(permissionTitle)
                     .font(DesignSystem.Typography.largeTitle)
                     .foregroundColor(DesignSystem.Colors.primaryText)
                     .multilineTextAlignment(.center)
                 
-                Text("Allow full access so we can find the best gaps and write your plans directly to your calendar.")
+                Text(permissionDescription)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.secondaryText)
                     .multilineTextAlignment(.center)
@@ -161,23 +168,75 @@ struct OnboardingView: View {
                     .lineSpacing(4)
             }
             
-            Button(action: requestPermissions) {
-                HStack {
-                    Text(calendarManager.isAuthorized ? "Access Granted" : "Give Access")
-                    if calendarManager.isAuthorized {
-                        Image(systemName: "checkmark")
+            if calendarManager.authStatus == .denied || calendarManager.authStatus == .restricted {
+                Button(action: openSettings) {
+                    HStack {
+                        Text("Open Settings")
+                        Image(systemName: "arrow.up.forward.app")
                     }
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(DesignSystem.Colors.accent)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(DesignSystem.Colors.surface)
+                    .cornerRadius(20)
                 }
-                .font(DesignSystem.Typography.headline)
-                .foregroundColor(DesignSystem.Colors.accent)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .background(DesignSystem.Colors.surface)
-                .cornerRadius(20)
+            } else {
+                Button(action: requestPermissions) {
+                    HStack {
+                        Text(calendarManager.isAuthorized ? "Access Granted" : "Give Access")
+                        if calendarManager.isAuthorized {
+                            Image(systemName: "checkmark.circle.fill")
+                        }
+                    }
+                    .font(DesignSystem.Typography.headline)
+                    .foregroundColor(calendarManager.isAuthorized ? DesignSystem.Colors.secondaryText : DesignSystem.Colors.accent)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background(DesignSystem.Colors.surface)
+                    .cornerRadius(20)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(calendarManager.isAuthorized ? DesignSystem.Colors.border : Color.clear, lineWidth: 1)
+                    )
+                }
+                .disabled(calendarManager.isAuthorized)
             }
-            .disabled(calendarManager.isAuthorized)
             
             Spacer()
+        }
+    }
+    
+    private var permissionIcon: String {
+        switch calendarManager.authStatus {
+        case .denied, .restricted: return "hand.raised.slash.fill"
+        case .authorized, .fullAccess: return "calendar.badge.checkmark"
+        default: return "calendar.badge.exclamationmark"
+        }
+    }
+    
+    private var permissionTitle: String {
+        switch calendarManager.authStatus {
+        case .denied, .restricted: return "Access Denied"
+        case .authorized, .fullAccess: return "All Set!"
+        default: return "Full Calendar Access"
+        }
+    }
+    
+    private var permissionDescription: String {
+        switch calendarManager.authStatus {
+        case .denied, .restricted: 
+            return "Calendar access was denied. Please enable it in Settings to allow the App to find gaps and write your plans."
+        case .authorized, .fullAccess:
+            return "Permissions granted! The App is ready to find the perfect gaps in your schedule locally on your device."
+        default: 
+            return "The App needs full access to find the best gaps and write your plans directly to your calendar. All processing happens locally on your device."
+        }
+    }
+    
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
         }
     }
     
@@ -192,6 +251,9 @@ struct OnboardingView: View {
     // MARK: - Logic
     
     private var canProceed: Bool {
+        if currentStep == .permissions {
+            return calendarManager.isAuthorized
+        }
         if currentStep == .legal {
             return hasAcceptedTerms
         }

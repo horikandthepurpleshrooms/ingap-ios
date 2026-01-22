@@ -6,17 +6,20 @@ class CalendarManager: ObservableObject {
     private let store = EKEventStore()
     
     @Published var isAuthorized: Bool = false
+    @Published var authStatus: EKAuthorizationStatus = .notDetermined
     
     init() {
-        checkPermission()
+        // Do not request permission on init
+        updateAuthorizationStatus()
     }
     
-    func checkPermission() {
-        switch EKEventStore.authorizationStatus(for: .event) {
+    func updateAuthorizationStatus() {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        self.authStatus = status
+        
+        switch status {
         case .authorized, .fullAccess:
             self.isAuthorized = true
-        case .notDetermined:
-            requestAccess()
         default:
             self.isAuthorized = false
         }
@@ -25,7 +28,7 @@ class CalendarManager: ObservableObject {
     func requestAccess() {
         store.requestFullAccessToEvents { [weak self] granted, error in
             DispatchQueue.main.async {
-                self?.isAuthorized = granted
+                self?.updateAuthorizationStatus()
             }
         }
     }
